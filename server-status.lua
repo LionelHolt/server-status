@@ -26,7 +26,7 @@ local warning_banner = [[
         <p style="font-weight: bolder; font-size: 0.8rem;">This is an example server status page for the Apache HTTP Server. Nothing on this server is secret, no URL tokens, no sensitive passwords. Everything served from here is static data.</p>
     </div>
 ]]
-local show_warning = true -- whether to display the above warning/notice on the page
+local show_warning = false -- whether to display the above warning/notice on the page
 local show_modules = false -- Whether to list loaded modules or not
 local show_threads = true -- whether to list thread information or not
 
@@ -412,6 +412,8 @@ var negativeBytes = 0; // cache for proc reloads, which skews traffic
 var updateSpeed = 5; // How fast do charts update?
 var maxRecords = 24; // How many records to show per chart
 var cpumax = 1000000; // random cpu max(?)
+var colorIdle = "#ffffff";
+var colorIdleTitle = "#000000";
 
 function refreshCharts(json, state) {
     if (json && json.processes) {
@@ -469,12 +471,12 @@ function refreshCharts(json, state) {
         for (var c in actionCache) {
             var el = actionCache[c];
             if (json.mpm.type == 'event') {
-            arr.push([el.timestamp, el.closing, el.idle, el.writing, el.reading, el.graceful]);
+                arr.push([el.timestamp, el.closing, el.writing, el.reading, el.graceful, el.idle]);
             } else {
-                arr.push([el.timestamp, el.keepalive, el.closing, el.idle, el.writing, el.reading, el.graceful]);
+                arr.push([el.timestamp, el.keepalive, el.closing, el.writing, el.reading, el.graceful, el.idle]);
             }
         }
-        var states = ['Keepalive', 'Closing', 'Idle', 'Writing', 'Reading', 'Graceful'];
+        var states = ['Keepalive', 'Closing', 'Writing', 'Reading', 'Graceful', 'Idle'];
         if (json.mpm.type == 'event') {
             states.shift();
             if (document.getElementById('mpminfo')) {
@@ -676,7 +678,7 @@ function refreshThreads(json, state) {
             }
             phtml += "</table>";
         } else {
-            phtml += "<p>No thread information avaialable</p>";
+            phtml += "<p>No thread information available</p>";
         }
         phtml += "</div>";
         box.innerHTML += phtml;
@@ -925,7 +927,7 @@ var numColorRows = 6;
 var numColorColumns = 20;
 for (var x=0;x<numColorRows;x++) {
     for (var y=0;y<numColorColumns;y++) {
-        var rnd = [[148, 221, 119], [0, 203, 171], [51, 167, 215] , [35, 160, 253], [218, 54, 188], [16, 171, 246], [110, 68, 206], [21, 49, 248], [142, 104, 210]][y]
+        var rnd = [[148, 221, 119], [0, 203, 171], [35, 160, 253], [218, 54, 188], [51, 167, 215], [16, 171, 246], [110, 68, 206], [21, 49, 248], [142, 104, 210]][y];
         var color = quokka_internal_hsl2rgb(y > 8 ? (Math.random()) : (rnd[0]/255), y > 8 ? (0.75+(y*0.05)) : (rnd[1]/255), y > 8 ? (0.42 + (y*0.05*(x/numColorRows))) : (0.1 + rnd[2]/512));
 
         // Light (primary) color:
@@ -940,7 +942,6 @@ for (var x=0;x<numColorRows;x++) {
         colors.push([hex, dhex, color, mhex]);
     }
 }
-
 
 /* Function for drawing pie diagrams
  * Example usage:
@@ -1115,12 +1116,12 @@ function quokkaLines(id, titles, values, options, sums) {
         if (options && options.lastsum) {
             title = titles[k] + " (" + values[values.length-1][x].toFixed(0) + ")";
         }
-        ctx.fillStyle = colors[k % colors.length][3];
+        ctx.fillStyle = titles[k] == 'Idle' ? colorIdle : colors[k % colors.length][3];
         ctx.fillRect(wspace + rectwidth + 75 , posY-((options && options.hires) ? 18:9), (options && options.hires) ? 20:10, (options && options.hires) ?20:10);
 
         // Add legend text
         ctx.font= (options && options.hires) ? "24px Sans-Serif" : "14px Sans-Serif";
-        ctx.fillStyle = "#00000";
+        if (titles[k] == 'Idle') ctx.fillStyle = "#000000";
         ctx.fillText(title,canvas.width - lwidth + ((options && options.hires) ? 100:60), posY);
 
         posY += (options && options.hires) ? 30:15;
@@ -1258,7 +1259,7 @@ function quokkaLines(id, titles, values, options, sums) {
     for (k in titles) {
         var maxY = 0, minY = 99999;
         ctx.beginPath();
-        var color = colors[k % colors.length][0];
+				var color = titles[k] == "Idle" ? colorIdle : colors[k % colors.length][0];
         var f = parseInt(k) + 1;
         if (noX) {
             f = parseInt(k);
@@ -1365,9 +1366,9 @@ function quokkaLines(id, titles, values, options, sums) {
             ctx.lineTo((wspace*0.75), py - pstacks[0]);
             ctx.lineWidth = 0;
             var grad = ctx.createLinearGradient(0, minY, 0, maxY);
-            grad.addColorStop(0.25, colors[k % colors.length][0])
-            grad.addColorStop(1, colors[k % colors.length][1])
-            ctx.strokeStyle = colors[k % colors.length][0];
+            grad.addColorStop(0.25, titles[k] == "Idle" ? colorIdle : colors[k % colors.length][0])
+            grad.addColorStop(1, titles[k] == "Idle" ? colorIdle : colors[k % colors.length][1])
+            ctx.strokeStyle = titles[k] == "Idle" ? colorIdle : colors[k % colors.length][0];
             ctx.fillStyle = grad;
             ctx.fill();
             ctx.fillStyle = "#000";
