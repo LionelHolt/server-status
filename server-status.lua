@@ -27,7 +27,7 @@ local warning_banner = [[
     </div>
 ]]
 local show_warning = false -- whether to display the above warning/notice on the page
-local show_modules = false -- Whether to list loaded modules or not
+local show_modules = true -- Whether to list loaded modules or not
 local show_threads = true -- whether to list thread information or not
 
 -- pre-declare some variables defined at the bottom of this script:
